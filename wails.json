@@ -1,0 +1,24 @@
+{
+  "name": "sg-tools",
+  "outputfilename": "sg-tools",
+  "frontend:dir": "frontend",
+  "frontend:install": "pnpm install",
+  "frontend:build": "pnpm build",
+  "frontend:dev": "pnpm dev",
+  "author": {
+    "name": "sg-tools",
+    "email": ""
+  },
+  "info": {
+    "companyName": "sg-tools",
+    "productName": "SG Tools",
+    "productVersion": "0.1.0",
+    "comments": "Windows desktop tools"
+  },
+  "bindings": {
+    "ts_generation": {
+      "outputType": "interfaces"
+    }
+  }
+}
+

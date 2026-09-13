@@ -1,0 +1,40 @@
+:root { color: #172033; background: #f5f7fb; font-synthesis: none; text-rendering: optimizeLegibility; }
+* { box-sizing: border-box; }
+body { margin: 0; min-width: 760px; min-height: 100vh; background: #f5f7fb; }
+.app-layout { min-height: 100vh; }
+.app-sider { background: #fff !important; border-right: 1px solid #e7edf5; }
+.app-sider .ant-menu { border-inline-end: 0; margin-top: 22px; }
+.brand-mark { width: 38px; height: 38px; margin: 18px auto; display: grid; place-items: center; border-radius: 12px; color: #fff; background: linear-gradient(135deg, #2563eb, #60a5fa); font-size: 20px; box-shadow: 0 8px 18px rgba(37, 99, 235, .24); }
+.app-header { height: 64px; padding: 0 28px; display: flex; justify-content: space-between; align-items: center; background: rgba(255,255,255,.92) !important; border-bottom: 1px solid #e7edf5; }
+.brand-name { font-size: 18px; font-weight: 750; color: #172033; }
+.brand-subtitle { margin-left: 12px; font-size: 12px; }
+.app-content { padding: 22px clamp(18px, 4vw, 48px) 44px; overflow: auto; }
+.feature-tabs > .ant-tabs-nav { margin-bottom: 22px; }
+.feature-tabs > .ant-tabs-nav .ant-tabs-tab { font-size: 16px; font-weight: 650; }
+.feature-toolbar { margin-bottom: 20px; }
+.feature-title { margin: 0 !important; letter-spacing: -.02em; }
+.workspace-card { background: #fff; }
+.workspace-meta { padding-bottom: 14px; border-bottom: 1px solid #edf1f6; margin-bottom: 2px; }
+.blue-icon { color: #2563eb; }
+.workflow-steps { margin: 8px 4px 20px; }
+.workflow-card { margin-bottom: 16px; border-color: #e7edf5; }
+.workflow-card .ant-card-head { min-height: 48px; }
+.step-index { width: 24px; height: 24px; display: inline-grid; place-items: center; border-radius: 8px; color: #2563eb; background: #eff6ff; font-size: 12px; font-weight: 750; }
+.aim-badge { width: 50px; height: 50px; display: grid; place-items: center; border-radius: 15px; color: #2563eb; background: #eff6ff; font-size: 24px; }
+.compact-paragraph { margin: 4px 0 0 !important; }
+.binding-header { display: grid; grid-template-columns: minmax(210px, 1fr) 150px 88px; gap: 12px; margin: 0 0 5px; padding: 0 0 7px; border-bottom: 1px solid #f0f2f5; }
+.binding-row { padding: 5px 0; border-bottom: 1px solid #f5f7fa; }
+.binding-row.configured { background: linear-gradient(90deg, #f8fbff, transparent); }
+.key-capture-button { width: 100%; text-align: left; color: #64748b; }
+.key-capture-button.has-key { color: #172033; border-color: #bfdbfe; background: #f8fbff; font-weight: 650; }
+.input-suffix { display: inline-flex; align-items: center; justify-content: center; width: 34px; color: #64748b; background: #f8fafc; border: 1px solid #d9e2f0; border-left: 0; font-size: 12px; }
+.run-card { background: linear-gradient(135deg, #fff, #f8fbff); }
+.run-title { margin: 0 0 3px !important; }
+.run-button { min-width: 180px; height: 46px; }
+.hotkey-hint { display: block; margin: 3px 0 7px; font-size: 12px; }
+@media (max-width: 860px) {
+  body { min-width: 620px; }
+  .app-content { padding: 16px; }
+  .app-header { padding: 0 18px; }
+  .binding-header { grid-template-columns: minmax(170px, 1fr) 140px 70px; }
+}

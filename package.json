@@ -1,0 +1,11 @@
+{
+  "name": "sg-tools",
+  "private": true,
+  "packageManager": "pnpm@11.10.0",
+  "scripts": {
+    "dev": "wails dev",
+    "build": "wails build -clean",
+    "test": "pnpm -r test",
+    "typecheck": "pnpm -r typecheck"
+  }
+}
