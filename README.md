@@ -41,7 +41,7 @@ pnpm --filter @sg-tools/desktop-frontend build
 wails build -clean
 ```
 
-执行 Wails 构建前请先关闭正在运行的 SG Tools 实例，否则 Windows 可能锁住默认输出文件。默认生成的 Windows 程序位于 `build/bin/sg-tools.exe`；需要保留旧实例进行对照测试时，可使用 `wails build -o sg-tools-follow-sync-test.exe` 生成独立文件。
+执行 Wails 构建前请先关闭正在运行的 SG Tools 实例，否则 Windows 可能锁住默认输出文件。正式生成的 Windows 程序始终命名为 `sg-tools.exe`，位于 `build/bin/sg-tools.exe`；如果旧实例暂时无法关闭，可临时使用其他输出名完成本地构建验证，但发布包仍使用 `sg-tools.exe`。
 
 当前测试包：[v0.1.0 Release](https://github.com/bugfix2020/sg-tools/releases/tag/v0.1.0)。
 
