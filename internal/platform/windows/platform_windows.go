@@ -20,19 +20,21 @@ import (
 )
 
 const (
-	wmKeyDown   = 0x0100
-	wmKeyUp     = 0x0101
-	wmHotKey    = 0x0312
-	pmRemove    = 0x0001
-	gaRoot      = 2
-	vkLButton   = 0x01
-	modAlt      = 0x0001
-	modControl  = 0x0002
-	modShift    = 0x0004
-	modWin      = 0x0008
-	modNoRepeat = 0x4000
-	sndFilename = 0x00020000
-	sndAsync    = 0x0001
+	wmKeyDown    = 0x0100
+	wmKeyUp      = 0x0101
+	wmSysKeyDown = 0x0104
+	wmSysKeyUp   = 0x0105
+	wmHotKey     = 0x0312
+	pmRemove     = 0x0001
+	gaRoot       = 2
+	vkLButton    = 0x01
+	modAlt       = 0x0001
+	modControl   = 0x0002
+	modShift     = 0x0004
+	modWin       = 0x0008
+	modNoRepeat  = 0x4000
+	sndFilename  = 0x00020000
+	sndAsync     = 0x0001
 
 	activeStartID = 1
 	activeStopID  = 2
@@ -83,23 +85,58 @@ func NewKeySender(hold time.Duration) *KeySender {
 }
 
 func (s *KeySender) Press(ctx context.Context, target clicker.WindowTarget, virtualKey uint16) error {
+	if err := s.SendKey(ctx, target, clicker.KeyTransition{VirtualKey: virtualKey, Down: true}); err != nil {
+		return err
+	}
+	if err := waitContext(ctx, s.hold); err != nil {
+		return err
+	}
+	return s.SendKey(ctx, target, clicker.KeyTransition{VirtualKey: virtualKey, Down: false})
+}
+
+func (s *KeySender) SendKey(_ context.Context, target clicker.WindowTarget, transition clicker.KeyTransition) error {
 	if target.Handle == 0 {
 		return clicker.ErrWindowNotBound
 	}
 	if ok, _, _ := procIsWindow.Call(target.Handle); ok == 0 {
 		return fmt.Errorf("target window is no longer valid")
 	}
-	scanCode, _, _ := procMapVK.Call(uintptr(virtualKey), 0)
-	downLParam := uintptr(1) | (scanCode << 16)
-	upLParam := downLParam | (1 << 30) | (1 << 31)
-	if result, _, callErr := procPostMsg.Call(target.Handle, wmKeyDown, uintptr(virtualKey), downLParam); result == 0 {
-		return win32CallError("WM_KEYDOWN", callErr)
+	scanCode := uintptr(transition.ScanCode)
+	if scanCode == 0 {
+		scanCode, _, _ = procMapVK.Call(uintptr(transition.VirtualKey), 0)
 	}
-	if err := waitContext(ctx, s.hold); err != nil {
-		return err
+	lParam := uintptr(1) | (scanCode << 16)
+	if transition.Extended {
+		lParam |= 1 << 24
 	}
-	if result, _, callErr := procPostMsg.Call(target.Handle, wmKeyUp, uintptr(virtualKey), upLParam); result == 0 {
-		return win32CallError("WM_KEYUP", callErr)
+	messageID := wmKeyDown
+	operation := "WM_KEYDOWN"
+	if !transition.Down {
+		messageID = wmKeyUp
+		lParam |= (1 << 30) | (1 << 31)
+		operation = "WM_KEYUP"
+	}
+	if transition.System {
+		if transition.Down {
+			messageID = wmSysKeyDown
+			operation = "WM_SYSKEYDOWN"
+		} else {
+			messageID = wmSysKeyUp
+			operation = "WM_SYSKEYUP"
+		}
+	}
+	if result, _, callErr := procPostMsg.Call(target.Handle, uintptr(messageID), uintptr(transition.VirtualKey), lParam); result == 0 {
+		return win32CallError(operation, callErr)
+	}
+	return nil
+}
+
+func ValidateWindow(target clicker.WindowTarget) error {
+	if target.Handle == 0 {
+		return clicker.ErrWindowNotBound
+	}
+	if ok, _, _ := procIsWindow.Call(target.Handle); ok == 0 {
+		return fmt.Errorf("target window is no longer valid")
 	}
 	return nil
 }
@@ -158,8 +195,9 @@ func ResolveVirtualKey(code string) (uint16, error) {
 }
 
 type WindowPicker struct {
-	mu     sync.Mutex
-	cancel context.CancelFunc
+	mu         sync.Mutex
+	cancel     context.CancelFunc
+	generation uint64
 }
 
 func NewWindowPicker() *WindowPicker { return &WindowPicker{} }
@@ -169,6 +207,8 @@ func (p *WindowPicker) Begin(parent context.Context, owner clicker.WindowIdentit
 	if p.cancel != nil {
 		p.cancel()
 	}
+	p.generation++
+	generation := p.generation
 	ctx, cancel := context.WithCancel(parent)
 	p.cancel = cancel
 	p.mu.Unlock()
@@ -178,32 +218,38 @@ func (p *WindowPicker) Begin(parent context.Context, owner clicker.WindowIdentit
 		defer close(events)
 		defer func() {
 			p.mu.Lock()
-			p.cancel = nil
+			if p.generation == generation {
+				p.cancel = nil
+			}
 			p.mu.Unlock()
 		}()
-		var last *clicker.WindowTarget
+		tracker := newWindowPickTracker()
 		wasDown := false
-		ticker := time.NewTicker(35 * time.Millisecond)
+		ticker := time.NewTicker(16 * time.Millisecond)
 		defer ticker.Stop()
 		for {
 			select {
 			case <-ctx.Done():
-				events <- clicker.WindowPickEvent{Kind: "cancelled"}
+				p.mu.Lock()
+				currentGeneration := p.generation
+				p.mu.Unlock()
+				if shouldEmitWindowPickCancellation(currentGeneration, generation) {
+					events <- clicker.WindowPickEvent{Kind: "cancelled"}
+				}
 				return
 			case <-ticker.C:
 				down := mouseLeftDown()
 				if down {
 					wasDown = true
 					target := targetAtCursor(owner)
-					if target != nil && (last == nil || last.Handle != target.Handle) {
-						last = target
+					if tracker.Update(target) {
 						events <- clicker.WindowPickEvent{Kind: "preview", Target: target}
 					}
 					continue
 				}
 				if wasDown {
-					if last != nil {
-						events <- clicker.WindowPickEvent{Kind: "complete", Target: last}
+					if tracker.Current() != nil {
+						events <- clicker.WindowPickEvent{Kind: "complete", Target: tracker.Current()}
 					} else {
 						events <- clicker.WindowPickEvent{Kind: "cancelled"}
 					}
@@ -224,6 +270,32 @@ func (p *WindowPicker) Cancel() error {
 	}
 	return nil
 }
+
+func shouldEmitWindowPickCancellation(currentGeneration, eventGeneration uint64) bool {
+	return currentGeneration == eventGeneration
+}
+
+type windowPickTracker struct {
+	lastHandle uintptr
+	current    *clicker.WindowTarget
+}
+
+func newWindowPickTracker() *windowPickTracker { return &windowPickTracker{} }
+
+func (t *windowPickTracker) Update(target *clicker.WindowTarget) bool {
+	handle := uintptr(0)
+	if target != nil {
+		handle = target.Handle
+	}
+	if handle == t.lastHandle {
+		return false
+	}
+	t.lastHandle = handle
+	t.current = target
+	return true
+}
+
+func (t *windowPickTracker) Current() *clicker.WindowTarget { return t.current }
 
 func mouseLeftDown() bool {
 	value, _, _ := procGetAsyncKeyState.Call(vkLButton)

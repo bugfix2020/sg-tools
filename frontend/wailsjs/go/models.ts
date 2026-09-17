@@ -5,6 +5,15 @@ export namespace app {
 	    processName: string;
 	    pid: number;
 	}
+	export interface FollowSyncSnapshot {
+	    state: string;
+	    main?: WindowInfo;
+	    follows: WindowInfo[];
+	    rules: clicker.KeyRuleConfig;
+	    capturedCount: number;
+	    lastCode?: string;
+	    lastError?: string;
+	}
 	export interface ProfileView {
 	    id: string;
 	    name: string;
@@ -42,6 +51,10 @@ export namespace clicker {
 	    code: string;
 	    label: string;
 	    delayMs: number;
+	}
+	export interface KeyRuleConfig {
+	    include: string[];
+	    exclude: string[];
 	}
 
 }

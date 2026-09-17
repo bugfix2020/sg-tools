@@ -14,9 +14,10 @@ type PersistedProfile struct {
 }
 
 type AppConfig struct {
-	Version  int                `json:"version"`
-	Hotkeys  HotkeyConfig       `json:"hotkeys"`
-	Profiles []PersistedProfile `json:"profiles"`
+	Version    int                `json:"version"`
+	Hotkeys    HotkeyConfig       `json:"hotkeys"`
+	Profiles   []PersistedProfile `json:"profiles"`
+	FollowSync KeyRuleConfig      `json:"followSync"`
 }
 
 func DefaultConfig() AppConfig {

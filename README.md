@@ -1,6 +1,6 @@
 # SG Tools
 
-Windows 优先的桌面工具 monorepo，当前包含一个使用 Go + Wails + React + Ant Design 实现的「键盘连点器」功能。
+Windows 优先的桌面工具 monorepo，当前包含使用 Go + Wails + React + Ant Design 实现的「键盘连点器」和「主窗口同步」两项功能。
 
 ## 当前功能
 
@@ -10,8 +10,11 @@ Windows 优先的桌面工具 monorepo，当前包含一个使用 Go + Wails + R
 - 当前实例与全部实例的启动、停止，以及可即时修改的四组全局热键。
 - 配置保存到 `%APPDATA%\\sg-tools\\config.json`，窗口句柄和运行状态不会持久化。
 - 仅 Windows 提供可用的平台适配；其他平台返回明确的 `unsupported_platform` 错误。
+- 「主窗口同步」选择一个主窗口和多个跟随窗口，仅由主窗口启动或停止；跟随窗口只接收广播。
+- 同步规则支持包含集合和排除集合，排除优先且冲突/重复规则会被拒绝；窗口句柄只在当前运行期有效，重启后需重新绑定。
+- 窗口选择采用“按住鼠标左键拖动，松开完成”的交互；选择中会显示黄色等待态、绿色候选态，并提供取消入口。
 
-当前版本暂不包含“主窗口带动多个跟随窗口”的广播模式。该模式会在后续功能中复用 `pkg/clicker` 与 Windows PostMessage 抽象单独实现。
+主窗口同步的发送端复用 Win32 `PostMessageW` 和现有按键 down/up 生命周期。`PostMessageW` 本身只能发送消息，不能观察真实输入；Windows 适配使用 `WH_KEYBOARD_LL` 捕获经过系统低级键盘 hook 的键盘边沿，并限定到主窗口的前台/root 窗口，同时排除 SG Tools 自身进程。完全停留在应用内部、没有进入该系统 hook 边界的输入不保证可被观察；本版本也不包含鼠标同步。选择器以 16ms 间隔更新当前鼠标候选窗口，重新开始选择时会忽略上一轮的取消事件。
 
 ## 开发环境
 
@@ -38,14 +41,21 @@ pnpm --filter @sg-tools/desktop-frontend build
 wails build -clean
 ```
 
-生成的 Windows 程序位于 `build/bin/sg-tools.exe`。
+执行 Wails 构建前请先关闭正在运行的 SG Tools 实例，否则 Windows 可能锁住默认输出文件。正式生成的 Windows 程序始终命名为 `sg-tools.exe`，位于 `build/bin/sg-tools.exe`；如果旧实例暂时无法关闭，可临时使用其他输出名完成本地构建验证，但发布包仍使用 `sg-tools.exe`。
+
+当前测试包：[v0.1.0 Release](https://github.com/bugfix2020/sg-tools/releases/tag/v0.1.0)。
 
 ## 目录
 
 ```text
 app/                         Wails facade、配置和事件
 frontend/                    React + Vite + Ant Design UI
-internal/platform/windows/   Win32 PostMessage、窗口选择、热键适配
+internal/platform/windows/   Win32 PostMessage、窗口选择、低级键盘 hook、热键适配
 packages/ui/                 可复用的前端主题 token
-pkg/clicker/                 独立可测试的调度与 profile 核心
+pkg/clicker/                 独立可测试的调度与 profile 核心，以及共享按键 transition
+pkg/windowsync/              独立可测试的输入捕获、过滤、广播和运行状态核心
 ```
+
+## 项目署名
+
+Built with GPT-6 Astra

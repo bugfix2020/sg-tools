@@ -22,7 +22,7 @@ func main() {
 		MinWidth:    760,
 		MinHeight:   560,
 		AssetServer: &assetserver.Options{Assets: assets},
-		Bind:        []interface{}{application.Clicker},
+		Bind:        []interface{}{application.Clicker, application.FollowSync},
 		OnStartup:   application.Startup,
 		OnShutdown:  application.Shutdown,
 	})

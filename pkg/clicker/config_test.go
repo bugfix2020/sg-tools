@@ -9,9 +9,10 @@ func TestConfigStoreRoundTripsProfilesAndHotkeys(t *testing.T) {
 	path := filepath.Join(t.TempDir(), "config.json")
 	store := NewConfigStore(path)
 	want := AppConfig{
-		Version:  1,
-		Hotkeys:  DefaultHotkeys(),
-		Profiles: []PersistedProfile{{ID: "p1", Name: "Tab 1", Bindings: make([]KeyBinding, MaxBindings)}},
+		Version:    1,
+		Hotkeys:    DefaultHotkeys(),
+		Profiles:   []PersistedProfile{{ID: "p1", Name: "Tab 1", Bindings: make([]KeyBinding, MaxBindings)}},
+		FollowSync: KeyRuleConfig{Include: []string{"KeyA"}, Exclude: []string{"Escape"}},
 	}
 	want.Profiles[0].Bindings[0] = KeyBinding{Code: "KeyA", Label: "A", DelayMs: 100}
 
@@ -24,6 +25,9 @@ func TestConfigStoreRoundTripsProfilesAndHotkeys(t *testing.T) {
 	}
 	if got.Profiles[0].Bindings[0] != want.Profiles[0].Bindings[0] {
 		t.Fatalf("round trip binding mismatch: got %+v want %+v", got.Profiles[0].Bindings[0], want.Profiles[0].Bindings[0])
+	}
+	if len(got.FollowSync.Include) != 1 || got.FollowSync.Include[0] != "KeyA" || got.FollowSync.Exclude[0] != "Escape" {
+		t.Fatalf("round trip follow-sync rules mismatch: got %+v want %+v", got.FollowSync, want.FollowSync)
 	}
 }
 
