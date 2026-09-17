@@ -16,7 +16,8 @@ type Props = {
 export function ProfilePanel({ profile, preview, hotkeys, onBind, onToggle, onBindingChange }: Props) {
   const hasKeys = profile.bindings.some((binding) => binding.code)
   const step = profile.state === 'running' ? 2 : profile.target && hasKeys ? 2 : profile.target ? 1 : 0
-  const displayTarget = preview ?? profile.target
+  const picking = profile.state === 'picking'
+  const displayTarget = preview ?? (picking ? undefined : profile.target)
   const isRunning = profile.state === 'running'
 
   const stepItems = useMemo(() => [
@@ -29,18 +30,18 @@ export function ProfilePanel({ profile, preview, hotkeys, onBind, onToggle, onBi
     <div className="profile-panel">
       <Steps current={step} status={profile.state === 'error' ? 'error' : undefined} items={stepItems} className="workflow-steps" />
 
-      <Card id={`bind-${profile.id}`} className="workflow-card" title={<Space><span className="step-index">01</span>窗口绑定</Space>} extra={profile.state === 'picking' ? <Tag color="processing">正在选择…</Tag> : profile.target ? <Tag color="success" icon={<CheckCircleOutlined />}>已绑定</Tag> : <Tag>未绑定</Tag>}>
-        <Flex align="center" justify="space-between" gap={16} wrap>
+      <Card id={`bind-${profile.id}`} className={`workflow-card ${picking ? 'window-pick-active' : ''}`} title={<Space><span className="step-index">01</span>窗口绑定</Space>} extra={picking ? <Tag color="processing">正在选择…</Tag> : profile.target ? <Tag color="success" icon={<CheckCircleOutlined />}>已绑定</Tag> : <Tag>未绑定</Tag>}>
+        <Flex data-testid="clicker-window-pick" className={`window-pick-row ${picking ? 'is-picking' : ''}`} align="center" justify="space-between" gap={16} wrap>
           <Flex align="center" gap={14}>
-            <div className="aim-badge"><AimOutlined /></div>
+            <div className={`aim-badge ${picking ? 'is-picking' : ''}`}><AimOutlined /></div>
             <div>
-              <Typography.Text strong>{displayTarget?.title || '尚未选择目标窗口'}</Typography.Text>
+              <Typography.Text strong>{picking ? displayTarget?.title || '正在选择窗口' : displayTarget?.title || '尚未选择目标窗口'}</Typography.Text>
               <Typography.Paragraph type="secondary" className="compact-paragraph">
-                {displayTarget ? `PID ${displayTarget.pid || '—'} · 选中光标下的实际控件` : '按住按钮并拖动准心到目标窗口，松开后完成绑定'}
+                {picking ? displayTarget ? `当前候选：${displayTarget.title || displayTarget.processName || `PID ${displayTarget.pid}`} · 继续按住鼠标左键，松开鼠标左键完成选择` : '继续按住鼠标左键，移动到目标窗口，松开鼠标左键完成选择' : displayTarget ? `PID ${displayTarget.pid || '—'} · 选中光标下的实际控件` : '按住按钮并拖动准心到目标窗口，松开后完成绑定'}
               </Typography.Paragraph>
             </div>
           </Flex>
-          <Button type="primary" icon={<AimOutlined />} disabled={isRunning} onMouseDown={() => void onBind()}>按住选择窗口</Button>
+          <Button type="primary" icon={<AimOutlined />} disabled={isRunning || picking} onMouseDown={(event) => { event.preventDefault(); void onBind() }}>{picking ? '继续移动，松开完成' : '按住选择窗口'}</Button>
         </Flex>
       </Card>
 

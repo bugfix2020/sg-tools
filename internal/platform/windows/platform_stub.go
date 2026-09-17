@@ -15,6 +15,11 @@ func NewKeySender(time.Duration) *KeySender { return &KeySender{} }
 func (*KeySender) Press(context.Context, clicker.WindowTarget, uint16) error {
 	return clicker.ErrUnsupportedPlatform
 }
+func (*KeySender) SendKey(context.Context, clicker.WindowTarget, clicker.KeyTransition) error {
+	return clicker.ErrUnsupportedPlatform
+}
+
+func ValidateWindow(clicker.WindowTarget) error { return clicker.ErrUnsupportedPlatform }
 
 type WindowPicker struct{}
 

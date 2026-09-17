@@ -31,7 +31,7 @@ export function useClickerStore() {
     })
     const offPreview = clickerApi.on('clicker:window-pick-preview', (payload) => {
       const event = payload as PickEvent
-      if (event.target) setPreview((current) => ({ ...current, [event.profileId]: event.target }))
+      setPreview((current) => ({ ...current, [event.profileId]: event.target }))
     })
     const offComplete = clickerApi.on('clicker:window-pick-complete', (payload) => {
       const event = payload as PickEvent

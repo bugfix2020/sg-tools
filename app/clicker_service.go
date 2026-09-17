@@ -300,7 +300,11 @@ func (s *ClickerService) handleHotkey(action string) {
 
 func (s *ClickerService) save() error {
 	profiles, _ := s.controller.Snapshot()
-	config := clicker.AppConfig{Version: 1, Hotkeys: s.GetHotkeys(), Profiles: make([]clicker.PersistedProfile, 0, len(profiles))}
+	followSync := clicker.KeyRuleConfig{}
+	if existing, err := s.store.Load(); err == nil {
+		followSync = existing.FollowSync
+	}
+	config := clicker.AppConfig{Version: 1, Hotkeys: s.GetHotkeys(), Profiles: make([]clicker.PersistedProfile, 0, len(profiles)), FollowSync: followSync}
 	for _, profile := range profiles {
 		bindings := make([]clicker.KeyBinding, len(profile.Bindings))
 		copy(bindings, profile.Bindings[:])

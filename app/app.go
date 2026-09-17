@@ -11,8 +11,9 @@ import (
 )
 
 type App struct {
-	ctx     context.Context
-	Clicker *ClickerService
+	ctx        context.Context
+	Clicker    *ClickerService
+	FollowSync *FollowSyncService
 }
 
 func NewApp(assetFS embed.FS) *App {
@@ -23,20 +24,24 @@ func NewApp(assetFS embed.FS) *App {
 	dataDir := filepath.Join(configDir, "sg-tools")
 	soundDir := filepath.Join(dataDir, "sounds")
 	_ = materializeSounds(assetFS, soundDir)
-	return &App{
-		Clicker: NewClickerService(filepath.Join(dataDir, "config.json"), soundDir),
-	}
+	configPath := filepath.Join(dataDir, "config.json")
+	return &App{Clicker: NewClickerService(configPath, soundDir), FollowSync: NewFollowSyncService(configPath)}
 }
 
 func (a *App) Startup(ctx context.Context) {
 	a.ctx = ctx
 	a.Clicker.setContext(ctx)
+	a.FollowSync.setContext(ctx)
 	if err := a.Clicker.startup(); err != nil {
 		runtime.LogErrorf(ctx, "clicker startup failed: %v", err)
+	}
+	if err := a.FollowSync.startup(); err != nil {
+		runtime.LogErrorf(ctx, "follow-sync startup failed: %v", err)
 	}
 }
 
 func (a *App) Shutdown(ctx context.Context) {
+	a.FollowSync.shutdown()
 	a.Clicker.shutdown()
 	runtime.LogInfo(ctx, "sg-tools stopped")
 }

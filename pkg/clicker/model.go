@@ -33,6 +33,11 @@ type KeyBinding struct {
 	DelayMs uint32 `json:"delayMs"`
 }
 
+type KeyRuleConfig struct {
+	Include []string `json:"include"`
+	Exclude []string `json:"exclude"`
+}
+
 func (b KeyBinding) Configured() bool {
 	return strings.TrimSpace(b.Code) != ""
 }
@@ -115,6 +120,21 @@ func (p *Profile) ValidateForStart() error {
 type PressRecord struct {
 	Target     WindowTarget
 	VirtualKey uint16
+}
+
+// KeyTransition describes one keyboard edge. Senders use the scan-code and
+// extended-key information to preserve the source key lifecycle.
+type KeyTransition struct {
+	VirtualKey uint16
+	ScanCode   uint16
+	Extended   bool
+	Down       bool
+	Repeat     bool
+	System     bool
+}
+
+type KeyEventSender interface {
+	SendKey(context.Context, WindowTarget, KeyTransition) error
 }
 
 type KeySender interface {
